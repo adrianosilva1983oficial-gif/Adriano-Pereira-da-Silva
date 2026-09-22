@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AquaSane Pro - Gestão Cadastral e Operações de Campo</title>
+    <meta name="description" content="AquaSane Pro - Sistema Corporativo de Gestão de Censo Cadastral, Cartografia e Roteirização de Campo para Saneamento e Concessionárias. Operação 100% offline em campo." />
+    <meta property="og:title" content="AquaSane Pro - Gestão Cadastral e Operações de Campo" />
+    <meta property="og:description" content="AquaSane Pro - Sistema Corporativo de Gestão de Censo Cadastral, Cartografia e Roteirização de Campo para Saneamento e Concessionárias. Operação 100% offline em campo." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0284c7" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="AquaSane Pro" />
+    <link rel="icon" type="image/svg+xml" href="/icon-mobile.svg" />
+    <link rel="apple-touch-icon" href="/icon-mobile.svg" />
+    <script>
+      (function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var isMobileParam = params.get('modo') === 'apk_mobile' || params.get('download_apk') === 'true' || params.get('app') === 'mobile';
+          var isPhoneUser = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && params.get('modo') !== 'web';
+          var isMobileApp = isMobileParam || isPhoneUser;
+
+          var manifestLink = document.createElement('link');
+          manifestLink.rel = 'manifest';
+          manifestLink.href = isMobileApp ? '/manifest-mobile.webmanifest' : '/manifest-web.webmanifest';
+          document.head.appendChild(manifestLink);
+
+          var iconEl = document.querySelector("link[rel='icon']");
+          if (iconEl) iconEl.href = isMobileApp ? '/icon-mobile.svg' : '/icon-web.svg';
+
+          var appleIconEl = document.querySelector("link[rel='apple-touch-icon']");
+          if (appleIconEl) appleIconEl.href = isMobileApp ? '/icon-mobile.svg' : '/icon-web.svg';
+
+          if (isMobileApp || params.get('versao') === 'mobile') {
+            document.title = "AquaSane Mobile - Campo Offline";
+            var metaTheme = document.querySelector("meta[name='theme-color']");
+            if (metaTheme) metaTheme.setAttribute('content', '#059669');
+          } else if (params.get('versao') === 'master') {
+            document.title = "AquaSane Pro - Web Master (Restrito)";
+            var metaThemeMaster = document.querySelector("meta[name='theme-color']");
+            if (metaThemeMaster) metaThemeMaster.setAttribute('content', '#d97706');
+          } else {
+            document.title = "AquaSane Pro - Web Cliente ERP & Planilhas";
+          }
+        } catch (e) {}
+      })();
+
+      // Suprime avisos benignos de WebSocket e HMR sob proxy reverso na nuvem
+      window.addEventListener('error', function(e) {
+        if (e && e.message && (e.message.includes("reading 'send'") || e.message.includes('failed to connect to websocket'))) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e && e.reason && String(e.reason).includes("reading 'send'")) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased select-none">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

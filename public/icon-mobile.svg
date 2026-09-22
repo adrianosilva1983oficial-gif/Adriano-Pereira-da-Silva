@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="mobileBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="dropGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Fundo com cantos arredondados -->
+  <rect width="512" height="512" rx="128" fill="url(#mobileBg)"/>
+
+  <!-- Halo de GPS / Campo -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#34d399" stroke-width="4" stroke-dasharray="12 12" opacity="0.4"/>
+
+  <!-- Smartphone Silhueta com Sombra -->
+  <g filter="url(#shadow)">
+    <!-- Corpo do Celular -->
+    <rect x="146" y="80" width="220" height="352" rx="42" fill="#0f172a" stroke="#10b981" stroke-width="8"/>
+    <!-- Alto-falante / Notch -->
+    <rect x="226" y="104" width="60" height="8" rx="4" fill="#334155"/>
+    <circle cx="298" cy="108" r="4" fill="#10b981"/>
+    <!-- Tela do Celular -->
+    <rect x="162" y="126" width="188" height="260" rx="18" fill="#022c22"/>
+  </g>
+
+  <!-- Ícone de Gota de Água na Tela -->
+  <path d="M256 160 C256 160 190 240 190 286 C190 322 220 352 256 352 C292 352 322 322 322 286 C322 240 256 160 256 160 Z" fill="url(#dropGrad)"/>
+
+  <!-- Indicador 100% Offline / Satélite no Celular -->
+  <circle cx="340" cy="115" r="32" fill="#10b981" stroke="#ffffff" stroke-width="6" filter="url(#shadow)"/>
+  <path d="M330 115 L337 122 L352 107" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Texto Emblema MOBILE -->
+  <rect x="166" y="394" width="180" height="34" rx="12" fill="#10b981"/>
+  <text x="256" y="417" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="18" text-anchor="middle" letter-spacing="2">APK MOBILE</text>
+</svg>

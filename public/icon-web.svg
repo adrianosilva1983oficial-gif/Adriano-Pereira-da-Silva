@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="webBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="50%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#082f49" />
+    </linearGradient>
+    <linearGradient id="screenBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <filter id="shadowWeb" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Fundo com cantos arredondados -->
+  <rect width="512" height="512" rx="128" fill="url(#webBg)"/>
+
+  <!-- Círculo de Dashboard / Conexão -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#38bdf8" stroke-width="4" stroke-dasharray="16 16" opacity="0.35"/>
+
+  <!-- Monitor / Desktop Computador com Sombra -->
+  <g filter="url(#shadowWeb)">
+    <!-- Moldura do Monitor -->
+    <rect x="96" y="90" width="320" height="230" rx="24" fill="#0f172a" stroke="#38bdf8" stroke-width="8"/>
+    <!-- Tela do Monitor -->
+    <rect x="114" y="108" width="284" height="174" rx="12" fill="#031a30"/>
+    
+    <!-- Gráficos e Dashboard na tela -->
+    <rect x="134" y="128" width="80" height="60" rx="8" fill="#0284c7" opacity="0.4"/>
+    <rect x="134" y="196" width="115" height="12" rx="6" fill="#38bdf8"/>
+    <rect x="134" y="214" width="80" height="10" rx="5" fill="#64748b"/>
+    <rect x="134" y="230" width="95" height="10" rx="5" fill="#64748b"/>
+
+    <!-- Barras de Gráfico ERP -->
+    <rect x="270" y="170" width="22" height="70" rx="6" fill="#38bdf8"/>
+    <rect x="300" y="145" width="22" height="95" rx="6" fill="#0ea5e9"/>
+    <rect x="330" y="130" width="22" height="110" rx="6" fill="#10b981"/>
+    <rect x="360" y="160" width="22" height="80" rx="6" fill="#0284c7"/>
+
+    <!-- Base / Suporte do Monitor -->
+    <path d="M236 320 L276 320 L286 380 L226 380 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="4"/>
+    <rect x="196" y="380" width="120" height="16" rx="8" fill="#334155"/>
+  </g>
+
+  <!-- Emblema SISTEMA WEB -->
+  <rect x="156" y="416" width="200" height="34" rx="12" fill="#0284c7"/>
+  <text x="256" y="439" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="18" text-anchor="middle" letter-spacing="2">SISTEMA WEB</text>
+</svg>

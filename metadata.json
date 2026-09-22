@@ -1,0 +1,11 @@
+{
+  "name": "AquaSane Pro",
+  "description": "AquaSane Pro - Sistema Corporativo de Gestão de Censo Cadastral, Cartografia e Roteirização de Campo para Saneamento e Concessionárias. Operação 100% offline em campo.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

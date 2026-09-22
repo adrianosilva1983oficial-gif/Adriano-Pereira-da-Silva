@@ -1,0 +1,33 @@
+{
+  "id": "/?modo=apk_mobile",
+  "name": "AquaSane Mobile - Campo",
+  "short_name": "AquaSane Mobile",
+  "description": "Aplicativo de Campo 100% Offline para Censo Cadastral, Ordens de Serviço, Cartografia e Fotos de Saneamento.",
+  "theme_color": "#059669",
+  "background_color": "#022c22",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/?modo=apk_mobile",
+  "scope": "/",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-mobile.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

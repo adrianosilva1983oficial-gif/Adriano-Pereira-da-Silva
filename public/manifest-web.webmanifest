@@ -1,0 +1,33 @@
+{
+  "id": "/?modo=web",
+  "name": "AquaSane Web - Gestão & ERP",
+  "short_name": "AquaSane Web",
+  "description": "Sistema Corporativo Web para Gestão de Clientes, Ordens de Serviço, Auditoria Embasa e Relatórios de Saneamento.",
+  "theme_color": "#0284c7",
+  "background_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "any",
+  "start_url": "/?modo=web",
+  "scope": "/",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-web.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

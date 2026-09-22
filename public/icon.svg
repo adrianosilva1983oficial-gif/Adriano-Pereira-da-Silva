@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <linearGradient id="dropGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#waterGrad)"/>
+  <!-- Map Pin Ring -->
+  <circle cx="256" cy="220" r="140" fill="#ffffff" opacity="0.15"/>
+  <!-- Water Drop Form -->
+  <path d="M256 100 C256 100 150 240 150 320 C150 380 197 428 256 428 C315 428 362 380 362 320 C362 240 256 100 256 100 Z" fill="url(#dropGrad)"/>
+  <!-- Census Document / Offline Sync Overlay -->
+  <rect x="210" y="260" width="92" height="110" rx="12" fill="#ffffff" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.2))"/>
+  <rect x="226" y="280" width="60" height="8" rx="4" fill="#0284c7"/>
+  <rect x="226" y="298" width="46" height="8" rx="4" fill="#38bdf8"/>
+  <rect x="226" y="316" width="54" height="8" rx="4" fill="#64748b"/>
+  <!-- Sync Check badge -->
+  <circle cx="288" cy="355" r="22" fill="url(#shieldGrad)"/>
+  <path d="M280 355 L285 360 L297 348" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
