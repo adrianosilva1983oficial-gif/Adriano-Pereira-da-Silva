@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   Users,
@@ -14,9 +14,16 @@ import {
   Layers,
   HeartHandshake,
   ShieldAlert,
-  BellRing
+  BellRing,
+  Activity,
+  Gauge,
+  Target,
+  ListOrdered,
+  Zap
 } from 'lucide-react';
 import { CensoRecord } from '../types/censo';
+import { OrdemServicoSCIWeb } from '../types/os';
+import { osService } from '../services/osService';
 import { BAIRROS_DATA, LISTA_BAIRROS, META_TOTAL_LIGACOES_CONTRATO, ZONAS_ABASTECIMENTO } from '../data/bairrosData';
 import { SyncState } from '../services/syncManager';
 import { GraficoD3Supervisao } from './GraficoD3Supervisao';
@@ -37,8 +44,114 @@ export const SupervisaoDashboard: React.FC<SupervisaoDashboardProps> = ({
   const [bairroFiltroTabela, setBairroFiltroTabela] = useState<string | null>(null);
   const [modalPushAberto, setModalPushAberto] = useState(false);
   const [modalBackupAberto, setModalBackupAberto] = useState(false);
+  const [osList, setOsList] = useState<OrdemServicoSCIWeb[]>(() => osService.getAllOS());
+  const [horaAtual, setHoraAtual] = useState<string>(() =>
+    new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  );
 
-  // Cálculos consolidados
+  // Escuta em tempo real as atualizações de campo nas ordens de serviço
+  useEffect(() => {
+    const unsubscribe = osService.subscribe((updated) => {
+      setOsList(updated);
+    });
+    const interval = setInterval(() => {
+      setHoraAtual(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+    }, 15000);
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, []);
+
+  // ==========================================
+  // RESUMO DE PRODUTIVIDADE EM TEMPO REAL
+  // ==========================================
+  // 1. Total de matrículas atribuídas (rotas programadas da planilha/SCIWeb + censos)
+  const matriculasAtribuidasSet = new Set<string>();
+  osList.forEach((os) => {
+    if (os.matriculaEmbasa) matriculasAtribuidasSet.add(os.matriculaEmbasa.trim());
+  });
+  records.forEach((r) => {
+    if (r.matriculaEmbasa) matriculasAtribuidasSet.add(r.matriculaEmbasa.trim());
+  });
+  const totalAtribuidas = Math.max(matriculasAtribuidasSet.size, osList.length, records.length);
+
+  // 2. Total visitadas (efetuadas/executadas, ausentes ou impedimentos registrados em campo)
+  const matriculasVisitadasSet = new Set<string>();
+  let countExecutadas = 0;
+  let countAusentes = 0;
+  let countImpedidas = 0;
+
+  osList.forEach((os) => {
+    if (os.status === 'EXECUTADA') {
+      matriculasVisitadasSet.add(os.matriculaEmbasa?.trim() || os.id);
+      countExecutadas++;
+    } else if (os.status === 'AUSENTE') {
+      matriculasVisitadasSet.add(os.matriculaEmbasa?.trim() || os.id);
+      countAusentes++;
+    } else if (os.status === 'IMPEDIDA') {
+      matriculasVisitadasSet.add(os.matriculaEmbasa?.trim() || os.id);
+      countImpedidas++;
+    }
+  });
+
+  // Também assegura a contabilização de registros de censo efetuados
+  records.forEach((r) => {
+    const mat = r.matriculaEmbasa?.trim() || r.id;
+    if (!matriculasVisitadasSet.has(mat)) {
+      matriculasVisitadasSet.add(mat);
+      countExecutadas++;
+    }
+  });
+
+  const totalVisitadas = matriculasVisitadasSet.size;
+  const totalPendentes = Math.max(0, totalAtribuidas - totalVisitadas);
+
+  // 3. Percentual de conclusão
+  const percentualConclusao = totalAtribuidas > 0
+    ? Math.min(100, Math.round((totalVisitadas / totalAtribuidas) * 1000) / 10)
+    : 0;
+
+  // 4. Média de visitas por hora
+  const timestampsVisitas: number[] = [];
+  records.forEach((r) => {
+    const ts = r.atualizadoEm || r.criadoEm || r.coordenadas?.timestamp;
+    if (ts && ts > 0) timestampsVisitas.push(ts);
+  });
+  osList.forEach((os) => {
+    if (os.status === 'EXECUTADA' || os.status === 'AUSENTE' || os.status === 'IMPEDIDA') {
+      const ts = os.dataUltimaTentativa || os.atualizadoEm || os.criadoEm;
+      if (ts && ts > 0) timestampsVisitas.push(ts);
+    }
+  });
+  timestampsVisitas.sort((a, b) => a - b);
+
+  let horasDecorridas = 1;
+  if (timestampsVisitas.length >= 2) {
+    const diffMs = timestampsVisitas[timestampsVisitas.length - 1] - timestampsVisitas[0];
+    const diffHoras = diffMs / (1000 * 60 * 60);
+    if (diffHoras >= 0.25) {
+      horasDecorridas = Math.max(0.5, Math.min(diffHoras, 8)); // Normalizado para a janela do turno de trabalho
+    }
+  }
+
+  const mediaVisitasHora = totalVisitadas > 0
+    ? (totalVisitadas / horasDecorridas).toFixed(1)
+    : '0.0';
+
+  // Cadastristas com vistorias em campo
+  const cadastristasEmCampo = new Set(
+    osList
+      .filter((o) => o.status === 'EXECUTADA' || o.status === 'AUSENTE' || o.status === 'IMPEDIDA')
+      .map((o) => o.cadastristaDesignado)
+      .filter(Boolean)
+  ).size || 1;
+
+  const mediaPorCadastristaHora = totalVisitadas > 0
+    ? (Number(mediaVisitasHora) / Math.max(1, cadastristasEmCampo)).toFixed(1)
+    : '0.0';
+
+  // Cálculos consolidados gerais
   const totalColetados = records.length;
   const totalSincronizados = records.filter((r) => r.syncStatus === 'synced').length;
   const totalPendentesOffline = records.filter((r) => r.syncStatus === 'pending' || r.syncStatus === 'syncing').length;
@@ -52,6 +165,177 @@ export const SupervisaoDashboard: React.FC<SupervisaoDashboardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* CARD: Resumo de Produtividade em Tempo Real */}
+      <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-200/90 relative overflow-hidden">
+        {/* Gradiente sutil de fundo */}
+        <div className="absolute top-0 right-0 w-96 h-32 bg-gradient-to-l from-sky-50 via-teal-50/40 to-transparent pointer-events-none" />
+
+        <div className="relative z-10">
+          {/* Cabeçalho do Card */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white flex items-center justify-center shadow-md shadow-sky-500/20 shrink-0">
+                <Activity className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
+                    Resumo de Produtividade em Tempo Real
+                  </h3>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Ao Vivo
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Acompanhamento instantâneo do avanço das equipes de campo no Sistema R7
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold">
+                <Clock className="w-3.5 h-3.5 text-sky-600" />
+                <span>Atualizado: {horaAtual}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-xs font-semibold">
+                <Users className="w-3.5 h-3.5 text-sky-600" />
+                <span>{cadastristasEmCampo} {cadastristasEmCampo === 1 ? 'cadastrista em campo' : 'cadastristas em campo'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid dos 4 Indicadores Principais Solicitados */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            {/* 1. Total de Matrículas Atribuídas */}
+            <div className="rounded-xl p-4 bg-gradient-to-br from-slate-50 to-white border border-slate-200/80 shadow-xs hover:border-sky-300 transition-all">
+              <div className="flex items-center justify-between text-slate-500 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Total Atribuídas
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+                  <ListOrdered className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tight">
+                {totalAtribuidas.toLocaleString('pt-BR')}{' '}
+                <span className="text-xs font-semibold text-slate-400">matrículas</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2.5 pt-2 border-t border-slate-100">
+                <span>Fila programada</span>
+                <span className="font-bold text-slate-700">{totalPendentes} pendentes</span>
+              </div>
+            </div>
+
+            {/* 2. Total Visitadas */}
+            <div className="rounded-xl p-4 bg-gradient-to-br from-emerald-50/50 via-white to-white border border-emerald-200/80 shadow-xs hover:border-emerald-300 transition-all">
+              <div className="flex items-center justify-between text-emerald-800 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                  Total Visitadas
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-2xl font-black text-emerald-700 tracking-tight">
+                {totalVisitadas.toLocaleString('pt-BR')}{' '}
+                <span className="text-xs font-semibold text-emerald-600/80">vistorias</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-emerald-800/80 mt-2.5 pt-2 border-t border-emerald-100/60">
+                <span className="font-bold text-emerald-700">{countExecutadas} efetuadas</span>
+                <span className="font-semibold text-slate-500">{countAusentes + countImpedidas} ausentes/imp.</span>
+              </div>
+            </div>
+
+            {/* 3. Percentual de Conclusão */}
+            <div className="rounded-xl p-4 bg-gradient-to-br from-teal-50/50 via-white to-white border border-teal-200/80 shadow-xs hover:border-teal-300 transition-all">
+              <div className="flex items-center justify-between text-teal-800 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-teal-700">
+                  % de Conclusão
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
+                  <Target className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-teal-700 tracking-tight">
+                  {percentualConclusao}%
+                </span>
+                <span className="text-xs font-medium text-slate-500">do lote atribuído</span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full mt-2.5 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min(100, Math.max(percentualConclusao > 0 ? 4 : 0, percentualConclusao))}%` }}
+                />
+              </div>
+            </div>
+
+            {/* 4. Média de Visitas por Hora */}
+            <div className="rounded-xl p-4 bg-gradient-to-br from-indigo-50/50 via-white to-white border border-indigo-200/80 shadow-xs hover:border-indigo-300 transition-all">
+              <div className="flex items-center justify-between text-indigo-800 mb-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+                  Média Visitas / Hora
+                </span>
+                <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <Gauge className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-indigo-700 tracking-tight">
+                  {mediaVisitasHora}
+                </span>
+                <span className="text-xs font-medium text-slate-500">visitas / hora</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2.5 pt-2 border-t border-indigo-100/60">
+                <span>Ritmo individual</span>
+                <span className="font-bold text-indigo-800">~{mediaPorCadastristaHora} /h por cad.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Barra de Progresso Segmentada Detalhada */}
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 mb-2 gap-1">
+              <span className="font-semibold text-slate-700">Composição do Lote Operacional:</span>
+              <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />
+                  <span className="font-medium text-slate-700">{countExecutadas} Executadas ({totalAtribuidas > 0 ? Math.round((countExecutadas / totalAtribuidas) * 100) : 0}%)</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" />
+                  <span className="font-medium text-slate-700">{countAusentes + countImpedidas} Ausentes / Impedidas ({totalAtribuidas > 0 ? Math.round(((countAusentes + countImpedidas) / totalAtribuidas) * 100) : 0}%)</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-slate-300 inline-block" />
+                  <span className="font-medium text-slate-500">{totalPendentes} Pendentes ({totalAtribuidas > 0 ? Math.round((totalPendentes / totalAtribuidas) * 100) : 0}%)</span>
+                </span>
+              </div>
+            </div>
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
+              <div
+                style={{ width: `${totalAtribuidas > 0 ? (countExecutadas / totalAtribuidas) * 100 : 0}%` }}
+                className="bg-emerald-500 h-full transition-all duration-500"
+                title={`${countExecutadas} Executadas`}
+              />
+              <div
+                style={{ width: `${totalAtribuidas > 0 ? ((countAusentes + countImpedidas) / totalAtribuidas) * 100 : 0}%` }}
+                className="bg-amber-400 h-full transition-all duration-500"
+                title={`${countAusentes + countImpedidas} Ausentes / Impedidas`}
+              />
+              <div
+                style={{ width: `${totalAtribuidas > 0 ? (totalPendentes / totalAtribuidas) * 100 : 100}%` }}
+                className="bg-slate-200 h-full transition-all duration-500"
+                title={`${totalPendentes} Pendentes`}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
       {/* Top Banner de Supervisão */}
       <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 p-5 text-white shadow-md border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

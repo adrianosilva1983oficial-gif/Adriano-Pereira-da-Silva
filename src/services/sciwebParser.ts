@@ -93,6 +93,8 @@ export const parsearDadosSCIWeb = (
   let idxCategoria = cabecalhos.findIndex((h) => h.includes('CAT') || h.includes('TIPO'));
   let idxEquipe = cabecalhos.findIndex((h) => h.includes('EQUIPE'));
   let idxCadastrista = cabecalhos.findIndex((h) => h.includes('CADAS') || h.includes('AGENTE') || h.includes('OPER'));
+  let idxLat = cabecalhos.findIndex((h) => h === 'LAT' || h === 'LATITUDE' || h === 'COORD_Y' || h === 'GPS_LAT' || h === 'Y');
+  let idxLng = cabecalhos.findIndex((h) => h === 'LNG' || h === 'LON' || h === 'LONGITUDE' || h === 'COORD_X' || h === 'GPS_LNG' || h === 'GPS_LON' || h === 'X');
 
   // Se a primeira linha não era cabeçalho, mas sim dados diretos
   const primeiraLinhaTemDados = cabecalhos.some((h) => /^\d+$/.test(h));
@@ -172,6 +174,21 @@ export const parsearDadosSCIWeb = (
     const offsetLat = (numLote * 0.00015) % 0.003;
     const offsetLng = (numLote * 0.00018) % 0.003;
 
+    let finalLat = parseFloat((baseLat + offsetLat).toFixed(6));
+    let finalLng = parseFloat((baseLng + offsetLng).toFixed(6));
+    let precisaoFinal = 3.5;
+
+    // Se a planilha possuir coordenadas reais (GPS / SIG / Topografia)
+    if (idxLat >= 0 && idxLng >= 0 && colunas[idxLat] && colunas[idxLng]) {
+      const pLat = parseFloat(colunas[idxLat].replace(',', '.'));
+      const pLng = parseFloat(colunas[idxLng].replace(',', '.'));
+      if (!isNaN(pLat) && !isNaN(pLng) && pLat !== 0 && pLng !== 0) {
+        finalLat = pLat;
+        finalLng = pLng;
+        precisaoFinal = 1.5;
+      }
+    }
+
     ordens.push({
       numeroOS: rawOS.startsWith('OS-') ? rawOS : `OS-2026-${rawOS.replace(/\D/g, '') || Math.floor(10000 + Math.random() * 90000)}`,
       numeroOSSCIWeb: rawOS.startsWith('SCI-') ? rawOS : `SCI-OS-${rawOS.replace(/\D/g, '') || Math.floor(800000 + Math.random() * 199999)}`,
@@ -190,9 +207,9 @@ export const parsearDadosSCIWeb = (
       equipeDesignada: rawEquipe,
       cadastristaDesignado: rawCadastrista,
       coordenadas: {
-        latitude: parseFloat((baseLat + offsetLat).toFixed(6)),
-        longitude: parseFloat((baseLng + offsetLng).toFixed(6)),
-        precisaoMetros: 3.5,
+        latitude: finalLat,
+        longitude: finalLng,
+        precisaoMetros: precisaoFinal,
         timestamp: Date.now(),
       },
     });
